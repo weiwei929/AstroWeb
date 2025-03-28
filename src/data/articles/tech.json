@@ -1,0 +1,11 @@
+[
+  {
+    "id": "8d01c631-695b-4077-98df-cadc1ba6f551",
+    "title": "Github同步要点",
+    "content": "# 关于 GitHub 同步的重点：\n\n1. 成功建立了本地与远程仓库的连接\n```powershell\ngit remote add origin https://github.com/weiwei929/logseq-ios-theme.git\n```\n\n2. 完成了基本的同步操作\n- 推送：`git push -u origin main`\n- 拉取：`git pull origin main`\n\n3. 项目结构已经完整：\n```\nlogseq-ios-theme/\n├── src/\n│   ├── styles/\n│   │   ├── base.css\n│   │   ├── dark.css\n│   │   └── light.css\n│   └── index.ts\n├── dist/\n├── package.json\n├── plugin.json\n├── tsconfig.json\n└── README.md\n```\n\n如果你后续需要：\n- 查看同步状态：`git status`\n- 检查远程连接：`git remote -v`\n- 获取最新更新：`git pull`\n\n祝您学习愉快！如果有任何问题，随时可以继续讨论。如果你后续需要：\n- 查看同步状态：`git status`\n- 检查远程连接：`git remote -v`\n- 获取最新更新：`git pull`\n\n祝您学习愉快！如果有任何问题，随时可以继续讨论。",
+    "createDate": "2025-03-28T08:52:48.881Z",
+    "updateDate": "2025-03-28T08:52:48.881Z",
+    "author": "Admin",
+    "coverImage": ""
+  }
+]

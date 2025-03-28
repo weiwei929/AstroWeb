@@ -9,6 +9,8 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^5.5.5"
+    "astro": "^5.5.5",
+    "marked": "^15.0.7",
+    "uuid": "^11.1.0"
   }
 }

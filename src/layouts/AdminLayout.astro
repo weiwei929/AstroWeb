@@ -1,0 +1,72 @@
+---
+// src/layouts/AdminLayout.astro
+// import { Astro } from 'astro';
+
+// --- 认证检查 ---
+const isAdminCookie = Astro.cookies.get('isAdmin');
+
+// 如果 cookie 不存在或值不是 'true'，则重定向到登录页
+if (!isAdminCookie || isAdminCookie.value !== 'true') {
+    // 重要: 在服务器端渲染期间，必须 `return` 重定向响应
+    return Astro.redirect('/login');
+}
+// --- 认证检查结束 ---
+
+interface Props {
+    title: string;
+}
+const { title } = Astro.props;
+
+// 简单的退出登录逻辑（清除 cookie） - 需要一个 API 端点配合
+// 这里我们先创建一个简单的链接指向一个假设的 API
+// 或者更简单的，直接链接回登录页，由 AdminLayout 自动踢出
+const logoutUrl = '/api/auth/logout'; // 我们将在稍后创建这个
+---
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+        <title>管理后台 - {title}</title>
+        <style is:global>
+            /* 可以为管理后台添加特定样式 */
+            body { font-family: sans-serif; margin: 0; display: flex; min-height: 100vh; }
+            nav { background-color: #f0f0f0; padding: 1em; width: 200px; border-right: 1px solid #ccc; }
+            nav ul { list-style: none; padding: 0; margin: 0; }
+            nav li { margin-bottom: 0.5em; }
+            nav a { text-decoration: none; color: #333; }
+            main { flex-grow: 1; padding: 2em; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+            th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; }
+            th { background-color: #f9f9f9; }
+            form div { margin-bottom: 1em; }
+            label { display: block; margin-bottom: 0.2em; }
+            input[type="text"], input[type="url"], textarea { width: 100%; padding: 0.5em; box-sizing: border-box; }
+            button { padding: 0.7em 1.5em; cursor: pointer; margin-right: 0.5em; }
+            .delete-btn { background-color: #ffdddd; color: #d00; border: 1px solid #d00; }
+            .add-form { border: 1px solid #eee; padding: 1em; margin-top: 2em; }
+        </style>
+    </head>
+    <body>
+        <nav>
+            <h2>导航</h2>
+            <ul>
+                <li><a href="/admin">管理首页</a></li>
+                <li><a href="/admin/links">外部链接</a></li>
+                <li><a href="/admin/articles">文章管理</a></li>
+                <li><a href="/admin/images">图片类</a> (待开发)</li>
+                <li><a href="/admin/music">音乐类</a> (待开发)</li>
+                <li><a href="/admin/videos">视频类</a> (待开发)</li>
+            </ul>
+            <hr/>
+            <ul>
+                <li><a href={logoutUrl}>退出登录</a></li>
+            </ul>
+        </nav>
+        <main>
+            <h1>{title}</h1>
+            <slot /> {/* 管理页面内容将插入这里 */}
+        </main>
+    </body>
+</html>

@@ -1,0 +1,197 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getArticles } from '../../utils/articleUtils.js';
+
+// 显式标记为服务器端渲染
+export const prerender = false;
+
+// 获取各分类最新5篇文章
+const techArticles = await getArticles('tech', 5);
+const knowledgeArticles = await getArticles('knowledge', 5);
+const leisureArticles = await getArticles('leisure', 5);
+const historyArticles = await getArticles('history', 5);
+
+const pageTitle = "文章管理";
+---
+
+<AdminLayout title={pageTitle}>
+    <p>管理您的文章内容</p>
+    
+    <div class="admin-cards">
+        <!-- 技术日志 -->
+        <div class="admin-card">
+            <h2>技术日志 <span class="article-count">({techArticles.length}篇)</span></h2>
+            <p>技术笔记、教程和解决方案</p>
+            
+            <div class="article-list">
+                {techArticles.length > 0 ? (
+                    <ul>
+                        {techArticles.map(article => (
+                            <li>
+                                <a href={`/admin/articles/view/${article.id}`}>{article.title}</a>
+                                <span class="article-date">{new Date(article.createDate).toLocaleDateString('zh-CN')}</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p class="empty-message">暂无文章</p>
+                )}
+            </div>
+            
+            <a href="/admin/articles/tech" class="card-button">管理技术日志</a>
+        </div>
+        
+        <!-- 知识汇集 -->
+        <div class="admin-card">
+            <h2>知识汇集 <span class="article-count">({knowledgeArticles.length}篇)</span></h2>
+            <p>学习笔记、知识总结和资料集合</p>
+            
+            <div class="article-list">
+                {knowledgeArticles.length > 0 ? (
+                    <ul>
+                        {knowledgeArticles.map(article => (
+                            <li>
+                                <a href={`/admin/articles/view/${article.id}`}>{article.title}</a>
+                                <span class="article-date">{new Date(article.createDate).toLocaleDateString('zh-CN')}</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p class="empty-message">暂无文章</p>
+                )}
+            </div>
+            
+            <a href="/admin/articles/knowledge" class="card-button">管理知识汇集</a>
+        </div>
+        
+        <!-- 休闲阅读 -->
+        <div class="admin-card">
+            <h2>休闲阅读 <span class="article-count">({leisureArticles.length}篇)</span></h2>
+            <p>随笔、感想和轻松话题</p>
+            
+            <div class="article-list">
+                {leisureArticles.length > 0 ? (
+                    <ul>
+                        {leisureArticles.map(article => (
+                            <li>
+                                <a href={`/admin/articles/view/${article.id}`}>{article.title}</a>
+                                <span class="article-date">{new Date(article.createDate).toLocaleDateString('zh-CN')}</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p class="empty-message">暂无文章</p>
+                )}
+            </div>
+            
+            <a href="/admin/articles/leisure" class="card-button">管理休闲阅读</a>
+        </div>
+        
+        <!-- 文史博览 -->
+        <div class="admin-card">
+            <h2>文史博览 <span class="article-count">({historyArticles.length}篇)</span></h2>
+            <p>文学、历史和文化探索</p>
+            
+            <div class="article-list">
+                {historyArticles.length > 0 ? (
+                    <ul>
+                        {historyArticles.map(article => (
+                            <li>
+                                <a href={`/admin/articles/view/${article.id}`}>{article.title}</a>
+                                <span class="article-date">{new Date(article.createDate).toLocaleDateString('zh-CN')}</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p class="empty-message">暂无文章</p>
+                )}
+            </div>
+            
+            <a href="/admin/articles/history" class="card-button">管理文史博览</a>
+        </div>
+    </div>
+</AdminLayout>
+
+<style>
+    .admin-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .admin-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .admin-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .admin-card h2 {
+        margin-top: 0;
+        color: #333;
+    }
+    
+    .article-count {
+        font-size: 0.85rem;
+        font-weight: normal;
+        color: #777;
+    }
+    
+    .article-date {
+        font-size: 0.85rem;
+        color: #777;
+        margin-left: 10px;
+    }
+    
+    .article-list {
+        min-height: 150px;
+        margin: 1rem 0;
+    }
+    
+    .article-list ul {
+        padding-left: 20px;
+        margin: 0;
+    }
+    
+    .article-list li {
+        margin-bottom: 8px;
+    }
+    
+    .empty-message {
+        color: #999;
+        font-style: italic;
+        text-align: center;
+        padding: 20px 0;
+    }
+    
+    .card-button {
+        display: inline-block;
+        margin-top: 0.5rem;
+        padding: 0.5rem 1rem;
+        background-color: #4a7bcc;
+        color: white;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.2s;
+        width: 100%;
+        text-align: center;
+    }
+    
+    .card-button:hover {
+        background-color: #3867b0;
+    }
+    
+    @media (max-width: 768px) {
+        .admin-cards {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

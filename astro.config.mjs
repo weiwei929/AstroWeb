@@ -1,5 +1,5 @@
-// @ts-check
 import { defineConfig } from 'astro/config';
 
-// https://astro.build/config
-export default defineConfig({});
+export default defineConfig({
+  output: 'server', // 将输出模式设置为服务器端渲染
+});

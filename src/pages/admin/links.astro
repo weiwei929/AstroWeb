@@ -1,0 +1,177 @@
+---
+// src/pages/admin/links.astro
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+// 这个页面主要通过客户端 JS 与 API 交互来管理链接
+---
+<AdminLayout title="管理外部链接">
+    <h2>现有链接列表</h2>
+    <table id="links-table">
+        <thead>
+            <tr>
+                <th>描述</th>
+                <th>URL</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 链接将由 JavaScript 动态填充 -->
+            <tr><td colspan="3">加载中...</td></tr>
+        </tbody>
+    </table>
+
+    <div class="add-form">
+        <h2>添加新链接</h2>
+        <form id="add-link-form">
+            <div>
+                <label for="description">描述:</label>
+                <input type="text" id="description" name="description" required />
+            </div>
+            <div>
+                <label for="url">URL:</label>
+                <input type="url" id="url" name="url" required placeholder="https://example.com" />
+            </div>
+            <button type="submit">确认添加</button>
+            <p id="add-status"></p>
+        </form>
+    </div>
+</AdminLayout>
+
+<script>
+    // --- 客户端 JavaScript ---
+    const tableBody = document.getElementById('links-table')?.querySelector('tbody');
+    const addForm = document.getElementById('add-link-form');
+    const descriptionInput = document.getElementById('description') as HTMLInputElement;
+    const urlInput = document.getElementById('url') as HTMLInputElement;
+    const addStatus = document.getElementById('add-status');
+
+    // 获取并渲染链接列表
+    async function fetchAndRenderLinks() {
+        if (!tableBody) return;
+        tableBody.innerHTML = '<tr><td colspan="3">加载中...</td></tr>'; // 显示加载状态
+        try {
+            const response = await fetch('/api/links');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const links = await response.json();
+
+            if (links.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3">暂无链接。</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = links.map(link => `
+                <tr>
+                    <td>${escapeHtml(link.description)}</td>
+                    <td><a href="${escapeHtml(link.url)}" target="_blank">${escapeHtml(link.url)}</a></td>
+                    <td>
+                        <button class="delete-btn" data-id="${link.id}">删除</button>
+                    </td>
+                </tr>
+            `).join('');
+
+        } catch (error) {
+            console.error('获取链接失败:', error);
+            tableBody.innerHTML = '<tr><td colspan="3" style="color: red;">加载链接失败。</td></tr>';
+        }
+    }
+
+    // 添加新链接的处理函数
+    async function handleAddLink(event) {
+        event.preventDefault(); // 阻止表单默认提交
+        if (!addForm || !descriptionInput || !urlInput || !addStatus) return;
+
+        const description = descriptionInput.value.trim();
+        const url = urlInput.value.trim();
+
+        if (!description || !url) {
+            addStatus.textContent = '描述和 URL 不能为空。';
+            addStatus.style.color = 'red';
+            return;
+        }
+
+        addStatus.textContent = '正在添加...';
+        addStatus.style.color = 'blue';
+
+        try {
+            const response = await fetch('/api/links', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ description, url }),
+            });
+
+            if (!response.ok) {
+               const errorText = await response.text();
+               throw new Error(`添加失败: ${response.status} ${errorText || ''}`);
+            }
+
+            // 添加成功
+            addStatus.textContent = '添加成功！';
+            addStatus.style.color = 'green';
+            (addForm as HTMLFormElement).reset(); // 清空表单
+            fetchAndRenderLinks(); // 重新加载列表
+
+            // 短暂显示成功消息后清除
+            setTimeout(() => { addStatus.textContent = ''; }, 3000);
+
+        } catch (error) {
+            console.error('添加链接出错:', error);
+            addStatus.textContent = `添加失败: ${error.message}`;
+            addStatus.style.color = 'red';
+        }
+    }
+
+    // 删除链接的处理函数 (使用事件委托)
+    async function handleDeleteLink(event) {
+        const target = event.target as HTMLButtonElement;
+        if (target.classList.contains('delete-btn')) {
+            const linkId = target.dataset.id;
+            if (!linkId) return;
+
+            if (confirm(`确定要删除 ID 为 ${linkId} 的链接吗？`)) {
+                try {
+                    const response = await fetch(`/api/links/${linkId}`, {
+                        method: 'DELETE',
+                    });
+
+                    if (!response.ok) {
+                         const errorText = response.status === 204 ? '' : await response.text(); // 204 No Content has no body
+                         throw new Error(`删除失败: ${response.status} ${errorText || ''}`);
+                    }
+
+                    // 删除成功，重新加载列表
+                    fetchAndRenderLinks();
+
+                } catch (error) {
+                    console.error('删除链接出错:', error);
+                    alert(`删除失败: ${error.message}`);
+                }
+            }
+        }
+    }
+
+    // HTML 转义函数 (简单版本，防止 XSS)
+    function escapeHtml(unsafe) {
+        if (typeof unsafe !== 'string') return unsafe;
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+
+    // --- 事件监听 ---
+    // 页面加载时获取链接
+    document.addEventListener('DOMContentLoaded', fetchAndRenderLinks);
+
+    // 监听表单提交事件
+    addForm?.addEventListener('submit', handleAddLink);
+
+    // 监听表格点击事件 (用于删除按钮)
+    tableBody?.addEventListener('click', handleDeleteLink);
+
+</script>

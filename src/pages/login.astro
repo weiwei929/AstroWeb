@@ -1,0 +1,28 @@
+---
+// src/pages/login.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// 检查 URL 中是否有 error 参数
+const url = new URL(Astro.request.url);
+const hasError = url.searchParams.get('error') === '1';
+
+// 显式标记为服务器端渲染
+export const prerender = false;
+---
+<BaseLayout title="登录">
+    <h1>请登录</h1>
+
+    {hasError && <p class="error">用户名或密码错误。</p>}
+
+    <form method="POST" action="/api/auth/login" enctype="application/x-www-form-urlencoded">
+        <div>
+            <label for="username">用户名:</label>
+            <input type="text" id="username" name="username" required />
+        </div>
+        <div>
+            <label for="password">密码:</label>
+            <input type="password" id="password" name="password" required />
+        </div>
+        <button type="submit">登录</button>
+    </form>
+</BaseLayout>

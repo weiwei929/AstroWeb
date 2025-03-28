@@ -1,0 +1,11 @@
+[
+  {
+    "id": "0bf57922-1372-4597-9912-232242a43be5",
+    "title": "视频站搭建方案324",
+    "content": "# 搭建视频站324方案\n\n\n\n文件目录架构\n\n```\ncherrypy-video/\n├── backend/\n│   ├── __init__.py         # 包初始化\n│   ├── app.py              # CherryPy 主入口，配置路由、会话等\n│   ├── config.py           # 配置文件，包含数据库、Redis、本地存储等参数\n│   ├── models.py           # 定义 PostgreSQL 数据模型（可选 SQLAlchemy）\n│   ├── controllers/\n│   │   ├── __init__.py\n│   │   ├── auth.py         # 用户认证相关接口：登录、登出等\n│   │   └── video.py        # 视频管理接口：上传、播放、移动、删除\n│   ├── services/\n│   │   ├── __init__.py\n│   │   ├── storage.py      # 本地视频文件管理（仅支持 mp4、mov），预留20G空间\n│   │   └── redis_cache.py  # Redis 缓存及会话管理工具\n│   └── utils/\n│       ├── __init__.py\n│       └── helpers.py      # 通用辅助函数\n├── frontend/\n│   ├── index.html          # 入口页面（可重定向至登录页）\n│   ├── login.html          # 登录页面（加载 Vue 应用入口组件）\n│   ├── video_manager.html  # 视频管理页面：视频列表、上传/导入入口\n│   ├── video_play.html     # 视频播放页面，包含评论输入区\n│   ├── main.js             # Vue 应用入口文件\n│   └── assets/\n│       ├── css/\n│       │   └── tailwind.css  # Tailwind CSS 样式文件\n│       └── js/              # 其他Vue组件等脚本，按需创建\n├── static/\n│   └── uploads/            # 视频及相关文件存储目录（预留20G空间）\n├── tests/\n│   ├── test_auth.py        # 认证模块单元测试\n│   └── test_video.py       # 视频相关接口单元测试\n├── requirements.txt        # Python 项目依赖（CherryPy, psycopg2, redis, etc.）\n└── README.md               # 项目说明文档\n```\n\n",
+    "createDate": "2025-03-28T08:51:18.328Z",
+    "updateDate": "2025-03-28T08:51:18.328Z",
+    "author": "Admin",
+    "coverImage": ""
+  }
+]

@@ -1,0 +1,35 @@
+---
+// src/layouts/BaseLayout.astro
+interface Props {
+    title: string;
+}
+
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="description" content="Astro description" />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+        <meta name="generator" content={Astro.generator} />
+        <title>{title}</title>
+        <style is:global>
+            /* 添加一些全局的基本样式 */
+            body { font-family: sans-serif; margin: 2em; }
+            label { display: block; margin-bottom: 0.5em; }
+            input[type="text"], input[type="password"], input[type="url"] {
+                width: 100%;
+                padding: 0.5em;
+                margin-bottom: 1em;
+                box-sizing: border-box;
+            }
+            button { padding: 0.7em 1.5em; cursor: pointer; }
+            .error { color: red; margin-bottom: 1em; }
+        </style>
+    </head>
+    <body>
+        <slot /> {/* 页面内容将插入这里 */}
+    </body>
+</html>

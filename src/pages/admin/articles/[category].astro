@@ -1,0 +1,418 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { getArticles, getCategoryName } from '../../../utils/articleUtils.js';
+
+// 获取分类参数
+const { category } = Astro.params;
+if (!['tech', 'knowledge', 'leisure', 'history'].includes(category)) {
+    return Astro.redirect('/admin/articles');
+}
+
+// 获取分类名称和文章列表
+const categoryName = getCategoryName(category);
+const articles = await getArticles(category);
+
+const pageTitle = `${categoryName}管理`;
+---
+
+<AdminLayout title={pageTitle}>
+    <div class="breadcrumb">
+        <a href="/admin/articles">文章管理</a> &gt; {categoryName}
+    </div>
+    
+    <!-- 文章列表部分 -->
+    <section class="article-list">
+        <h2>已有文章</h2>
+        
+        {articles.length > 0 ? (
+            <table>
+                <thead>
+                    <tr>
+                        <th>标题</th>
+                        <th>创建日期</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {articles.map(article => (
+                        <tr>
+                            <td>{article.title}</td>
+                            <td>{new Date(article.createDate).toLocaleString('zh-CN')}</td>
+                            <td class="actions">
+                                <a href={`/admin/articles/view/${article.id}`} class="action-button view">查看</a>
+                                <button class="action-button delete" data-id={article.id}>删除</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        ) : (
+            <p class="empty-message">暂无文章，请添加</p>
+        )}
+    </section>
+    
+    <!-- 添加文章部分 -->
+    <section class="add-article">
+        <h2>添加新文章</h2>
+        
+        <form id="articleForm">
+            <div class="form-group">
+                <label for="title">文章标题</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="content">文章内容 (Markdown格式)</label>
+                <textarea id="content" name="content" rows="12"></textarea>
+            </div>
+            
+            <div class="file-upload">
+                <label>导入 Markdown 文件</label>
+                <input type="file" id="markdownFile" accept=".md,.markdown">
+                <div id="uploadStatus" class="upload-status"></div>
+            </div>
+            
+            <input type="hidden" name="category" value={category}>
+            
+            <div class="button-group">
+                <button type="submit" class="submit-button">添加文章</button>
+            </div>
+        </form>
+    </section>
+    
+    <div class="admin-actions">
+        <a href="/admin/articles" class="back-button">&larr; 返回文章管理</a>
+    </div>
+
+    <script define:vars={{ category }}>
+        // 文件导入处理
+        const fileInput = document.getElementById('markdownFile');
+        const contentTextarea = document.getElementById('content');
+        const uploadStatus = document.getElementById('uploadStatus');
+        
+        if (fileInput && contentTextarea && uploadStatus) {
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target?.files?.[0];
+                if (!file) return;
+                
+                // 检查文件大小 (限制为 10MB)
+                const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+                if (file.size > MAX_FILE_SIZE) {
+                    uploadStatus.textContent = "文件过大，请选择小于10MB的文件";
+                    uploadStatus.className = 'upload-status error';
+                    return;
+                }
+                
+                // 检查文件类型
+                if (!file.name.toLowerCase().endsWith('.md') && 
+                    !file.name.toLowerCase().endsWith('.markdown')) {
+                    uploadStatus.textContent = "请选择Markdown格式文件(.md或.markdown)";
+                    uploadStatus.className = 'upload-status error';
+                    return;
+                }
+                
+                uploadStatus.textContent = "正在读取文件...";
+                uploadStatus.className = 'upload-status loading';
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const content = event.target?.result?.toString() || '';
+                        contentTextarea.value = content;
+                        
+                        // 自动调整文本区域高度
+                        contentTextarea.style.height = 'auto';
+                        contentTextarea.style.height = Math.min(500, contentTextarea.scrollHeight) + 'px';
+                        
+                        // 如果内容过长，添加警告
+                        if (content.length > 100000) {
+                            uploadStatus.textContent = "文件导入成功，但内容较长，可能影响性能";
+                            uploadStatus.className = 'upload-status warning';
+                        } else {
+                            uploadStatus.textContent = "文件导入成功!";
+                            uploadStatus.className = 'upload-status success';
+                        }
+                        
+                        // 3秒后隐藏提示
+                        setTimeout(() => {
+                            uploadStatus.textContent = "";
+                            uploadStatus.className = 'upload-status';
+                        }, 3000);
+                    } catch (err) {
+                        console.error('Error processing file:', err);
+                        uploadStatus.textContent = "处理文件时出错，请重试";
+                        uploadStatus.className = 'upload-status error';
+                    }
+                };
+                
+                reader.onerror = (error) => {
+                    console.error('File reading error:', error);
+                    uploadStatus.textContent = "文件读取失败，请重试";
+                    uploadStatus.className = 'upload-status error';
+                };
+                
+                reader.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        const percent = Math.round((event.loaded / event.total) * 100);
+                        uploadStatus.textContent = `正在读取文件... ${percent}%`;
+                    }
+                };
+                
+                // 开始读取文件
+                reader.readAsText(file);
+            });
+        }
+        
+        // 表单提交处理
+        const form = document.getElementById('articleForm');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                const article = {
+                    title: formData.get('title')?.toString() || '',
+                    content: formData.get('content')?.toString() || '',
+                    category: formData.get('category')?.toString() || category
+                };
+                
+                if (!article.title.trim()) {
+                    alert('请输入文章标题');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/articles', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(article)
+                    });
+                    
+                    if (response.ok) {
+                        // 成功后刷新页面
+                        window.location.reload();
+                    } else {
+                        const data = await response.json().catch(() => ({ error: '未知错误' }));
+                        alert(`添加文章失败: ${data.error || '未知错误'}`);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('发生错误，请重试');
+                }
+            });
+        }
+        
+        // 删除文章处理
+        document.querySelectorAll('.delete').forEach(button => {
+            if (button instanceof HTMLElement) {
+                button.addEventListener('click', async () => {
+                    if (!confirm('确定要删除这篇文章吗？')) return;
+                    
+                    const articleId = button.dataset.id;
+                    if (!articleId) return;
+                    
+                    try {
+                        const response = await fetch(`/api/articles/detail/${articleId}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        if (response.ok) {
+                            // 成功后刷新页面
+                            window.location.reload();
+                        } else {
+                            const data = await response.json().catch(() => ({ error: '未知错误' }));
+                            alert(`删除文章失败: ${data.error || '未知错误'}`);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('发生错误，请重试');
+                    }
+                });
+            }
+        });
+    </script>
+
+    <style>
+        /* 添加警告状态的样式 */
+        .upload-status.warning {
+            color: #f39c12;
+        }
+        
+        .breadcrumb {
+            margin-bottom: 1.5rem;
+            color: #666;
+        }
+        
+        .breadcrumb a {
+            color: #4a7bcc;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        .article-list, 
+        .add-article {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .article-list h2,
+        .add-article h2 {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: #333;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 0.5rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background-color: #f5f5f5;
+            font-weight: 500;
+        }
+        
+        .empty-message {
+            padding: 2rem;
+            text-align: center;
+            color: #999;
+            font-style: italic;
+        }
+        
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        
+        textarea {
+            resize: vertical;
+            font-family: monospace;
+        }
+        
+        .file-upload {
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border: 1px dashed #ddd;
+        }
+        
+        .upload-status {
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+        }
+        
+        .upload-status.loading {
+            color: #f39c12;
+        }
+        
+        .upload-status.success {
+            color: #27ae60;
+        }
+        
+        .upload-status.error {
+            color: #e74c3c;
+        }
+        
+        /* 按钮样式 */
+        .button-group {
+            margin-top: 1.5rem;
+        }
+        
+        .submit-button {
+            background-color: #4a7bcc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .submit-button:hover {
+            background-color: #3867b0;
+        }
+        
+        .action-button {
+            display: inline-block;
+            padding: 0.3rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-right: 0.5rem;
+            text-decoration: none;
+        }
+        
+        .view {
+            background-color: #4a7bcc;
+            color: white;
+        }
+        
+        .view:hover {
+            background-color: #3867b0;
+        }
+        
+        .delete {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .delete:hover {
+            background-color: #c0392b;
+        }
+        
+        .admin-actions {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: flex-start;
+        }
+        
+        .back-button {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: #f5f5f5;
+            color: #333;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        
+        .back-button:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+</AdminLayout>
